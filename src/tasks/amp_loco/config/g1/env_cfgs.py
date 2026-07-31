@@ -23,7 +23,9 @@ def g1_amp_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   # Keep CCD high enough for stability but avoid Warp OOM from excessive EPA buffers.
   cfg.sim.mujoco.ccd_iterations = 500
   cfg.sim.contact_sensor_maxmatch = 500
-  cfg.sim.nconmax = 48 #play的时候加wave和slope的时候改为100
+  cfg.sim.nconmax = 48
+  if play:
+    cfg.sim.nconmax = 100
 
   cfg.scene.entities = {"robot": get_g1_robot_cfg()}
 
@@ -158,6 +160,12 @@ def g1_amp_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.events["init_motion_loader"].params["delay_reset_env_ratio"] = 1.0
 
+    twist_cmd = cfg.commands["twist"]
+    assert isinstance(twist_cmd, UniformVelocityCommandCfg)
+    twist_cmd.ranges.lin_vel_x = (1.0, 3.0)
+    twist_cmd.ranges.lin_vel_y = (-1.0, 1.0)
+    twist_cmd.ranges.ang_vel_z = (-3.14 / 2, 3.14 / 2)
+
     # if cfg.scene.terrain is not None:
     #   if cfg.scene.terrain.terrain_generator is not None:
     #     cfg.scene.terrain.terrain_generator.curriculum = False
@@ -191,12 +199,5 @@ def g1_amp_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
   # Disable terrain curriculum (not present in play mode since rough clears all).
   # cfg.curriculum.pop("terrain_levels", None)
-
-  if play:
-    twist_cmd = cfg.commands["twist"]
-    assert isinstance(twist_cmd, UniformVelocityCommandCfg)
-    twist_cmd.ranges.lin_vel_x = (1.0, 3.0)
-    twist_cmd.ranges.lin_vel_y = (-1.0, 1.0)
-    twist_cmd.ranges.ang_vel_z = (-3.14 / 2, 3.14 / 2)
 
   return cfg
