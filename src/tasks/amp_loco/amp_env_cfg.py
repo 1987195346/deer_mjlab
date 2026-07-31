@@ -368,7 +368,7 @@ def make_amp_env_cfg() -> ManagerBasedRlEnvCfg:
     scene=SceneCfg(
       terrain=TerrainEntityCfg(
         terrain_type="generator",
-        terrain_generator=replace(ROUGH_TERRAINS_CFG),
+        terrain_generator=replace(RANDOM_ROUGH_TERRAINS_CFG),
         max_init_terrain_level=5,
       ),
       sensors=(terrain_scan,),

@@ -123,7 +123,8 @@ class MotionResetManager:
         root_pos = frames["root_pos"][idx]
         root_quat = frames["root_quat"][idx]
         positions = env.scene.env_origins[env_ids].clone()
-        positions[:, 2] = root_pos[:, 2]
+        #positions[:, 2] = root_pos[:, 2]
+        positions[:, 2] = env.scene.env_origins[env_ids, 2] + root_pos[:, 2]
 
         root_pose = torch.cat([positions, root_quat], dim=-1)
         asset.write_root_link_pose_to_sim(root_pose, env_ids=env_ids)

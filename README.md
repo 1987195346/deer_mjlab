@@ -1,44 +1,42 @@
-# AMP_mjlab
+# deer_mjlab
 
-[中文 README](README_zh.md)
+部署集成代码位于 [ccrpRepo/wbc_fsm](https://github.com/ccrpRepo/wbc_fsm) 项目中的 `MJAmp State`。
 
-Deployment integration code is in [ccrpRepo/wbc_fsm](https://github.com/ccrpRepo/wbc_fsm), under `MJAmp State`.
+基于 mjlab + rsl_rl 的 G1 AMP 运动控制项目。
 
-G1 AMP motion control project built on top of mjlab + rsl_rl.
+本项目的核心特点是：
 
-Key features of this repository:
+- 使用同一个 policy 同时学习 locomotion（走/跑）与 recovery（跌倒恢复）
+- 通过 AMP 判别器约束动作风格与运动先验
+- 在训练与导出链路中保持一致，支持直接导出 ONNX policy
 
-- A single policy learns both locomotion (walk/run) and recovery (fall-and-get-up)
-- AMP discriminator regularizes motion style and priors
-- Training and deployment pipelines are consistent, with direct ONNX policy export support
+## 核心思路
 
-## Core Idea
+传统做法常把“走跑策略”和“恢复策略”分开训练并做切换；本项目将两类能力放入一个策略中统一学习。
 
-Instead of training separate policies for locomotion and recovery and switching between them, this project learns both capabilities in one unified policy.
+实现要点：
 
-Implementation highlights:
+- 运动数据分组：
+	- Walk/Run 数据目录：`src/assets/motions/g1/amp/WalkandRun`
+	- Recovery 数据目录：`src/assets/motions/g1/amp/Recovery`
+- 延迟重置机制（Delayed Termination）：
+	- 一部分环境在触发终止后不立即 reset，而是给定恢复窗口
+	- 该子集环境优先从 Recovery 片段采样 reset 状态
+- 统一 AMP 训练：
+	- 单一 actor-critic + 单一 AMP discriminator
+	- 在同一训练过程中学习速度跟踪、抗扰动与恢复能力
 
-- Motion data split:
-  - Walk/Run data: `src/assets/motions/g1/amp/WalkandRun`
-  - Recovery data: `src/assets/motions/g1/amp/Recovery`
-- Delayed termination/reset:
-  - A subset of environments does not reset immediately after termination
-  - These environments receive a recovery window and reset states sampled from recovery clips
-- Unified AMP training:
-  - One actor-critic + One AMP discriminator
-  - Velocity tracking, perturbation robustness, and recovery are learned together
+这样可以减少策略切换带来的状态不连续问题，得到更一致的行为。
 
-This reduces discontinuities caused by policy switching and yields more consistent behavior.
-
-## Requirements
+## 环境要求
 
 - Linux
-- Python 3.11 (recommended)
-- Working MuJoCo and GPU driver setup
+- Python 3.11（建议）
+- 已可用的 MuJoCo / GPU 驱动环境
 
-## Quick Start
+## 快速开始
 
-### 1. Install
+### 1. 安装仓库
 
 ```bash
 conda activate mjlab
@@ -46,98 +44,109 @@ cd AMP_mjlab
 python -m pip install -e .
 ```
 
-### 2. Apply mjlab Patch (Optional)
+### 2. 应用 mjlab 补丁（可选）
 
-If you do not apply this patch, remove `history_ordering` configuration from the code.
+如果不打这个补丁，则需要在代码中去掉 `history_ordering` 配置。
 
-What this patch does:
+补丁作用说明：
 
-- It adds an option for how observation history is flattened: by time (`time`) or by term (`term`).
-- Default mjlab behavior supports only `term` ordering.
+- 增加了历史观测的展开方式选项，可选择按时间维(`time`)或按观测项(`term`)展开。
+- mjlab 默认仅支持按 `term` 展开。
 
-Patch file:
+补丁文件：
 
 - `mjlab_patch/mjlab/managers/observation_manager.py`
 
-Example command:
+示例覆盖命令：
 
 ```bash
 cp mjlab_patch/mjlab/managers/observation_manager.py \
-  /home/crp/miniconda3/envs/mjlab/lib/python3.11/site-packages/mjlab/managers/observation_manager.py
+	/home/crp/miniconda3/envs/mjlab/lib/python3.11/site-packages/mjlab/managers/observation_manager.py
 ```
 
-### 3. List Available Tasks
+### 3. 查看可用任务
 
 ```bash
 python scripts/list_envs.py --keyword AMP
 ```
 
-Main tasks:
+主要任务：
 
 - `Unitree-G1-AMP-Rough`
 - `Unitree-G1-AMP-Flat`
 
-## Training
+## 训练
+
 
 ```bash
 python scripts/train.py Unitree-G1-AMP-Flat --env.scene.num-envs=4096
 ```
 
-Logs are saved by default to:
+
+日志默认在：
 
 - `logs/rsl_rl/g1_amp_locomotion/<time_stamp_run>/`
 
-## Training Curve Note (Important)
+## 训练曲线说明（重要）
 
-- Around `2w` iterations (about 20k), the policy often suddenly learns fall-recovery behavior.
-- As a result, multiple metrics in `logs` may show abrupt jumps. This is expected and not necessarily a training failure.
+- 在约 `2w` 轮（约 20k iterations）附近，策略通常会突然学会“跌倒后恢复”行为。
+- 对应地，`logs` 中多个指标会出现明显突变（阶跃式变化），这是正常现象，不一定是训练异常。
 
-![Training log transition example](logs.png)
+![训练日志突变示例](logs.png)
 
-## Evaluation and Visualization
+## 在已有模型继续训练
+```bash
+python scripts/train.py Unitree-G1-AMP-Rough \
+  --env.scene.num-envs=4096 \
+  --agent.resume True \
+  --agent.load-run=2026-06-29_09-37-28 \
+  --agent.load-checkpoint=model_42500.pt
+```
 
-Replay with a trained checkpoint:
+## 评估与可视化
+
+使用已训练权重回放：
 
 ```bash
 python scripts/play.py Unitree-G1-AMP-Rough \
-  --checkpoint-file logs/rsl_rl/g1_amp_locomotion/<run_dir>/model_<iter>.pt
+	--checkpoint-file logs/rsl_rl/g1_amp_locomotion/<run_dir>/model_<iter>.pt 
 ```
 
-Note: ONNX export is enabled by default in both training and play workflows.
+说明：训练与回放阶段都支持 ONNX 导出（默认开启）。
 
-## Motion Data Preparation
+## 运动数据准备
 
-CSV-to-NPZ conversion script:
+仓库提供 CSV 到 NPZ 的转换脚本：
 
 ```bash
 python scripts/csv_to_npz.py --help
 ```
 
-Recommended data layout:
+推荐目录组织：
 
-- Raw CSV: `motion_data_csv/amp`
-- Converted NPZ: `src/assets/motions/g1/amp/WalkandRun` and `src/assets/motions/g1/amp/Recovery`
+- 原始 CSV：`motion_data_csv/amp`
+- 转换后 NPZ：`src/assets/motions/g1/amp/WalkandRun` 与 `src/assets/motions/g1/amp/Recovery`
 
-If valid NPZ files exist in these folders, training config loads them automatically.
+只要上述目录中存在可用 NPZ，训练配置会自动加载。
 
-## Repository Structure
+## 目录说明
 
-- `src/tasks/amp_loco`: AMP locomotion/recovery task implementation
-- `src/tasks/amp_loco/config/g1`: G1 task registration, env configs, RL configs
-- `src/tasks/amp_loco/mdp`: rewards, observations, events, termination logic
-- `scripts/train.py`: training entry point
-- `scripts/play.py`: playback entry point
-- `scripts/csv_to_npz.py`: motion data conversion tool
-- `mjlab_patch`: required local patch for mjlab
+- `src/tasks/amp_loco`：AMP locomotion/recovery 任务实现
+- `src/tasks/amp_loco/config/g1`：G1 任务注册、环境与 RL 配置
+- `src/tasks/amp_loco/mdp`：奖励、观测、事件、终止逻辑
+- `scripts/train.py`：训练入口
+- `scripts/play.py`：回放入口
+- `scripts/csv_to_npz.py`：动作数据转换工具
+- `mjlab_patch`：依赖的 mjlab 本地补丁
 
-## Highlights
+## 项目亮点总结
 
-- One policy unifies walk/run and recovery skills
-- AMP + velocity objective jointly optimize style and task performance
-- Delayed reset with recovery sampling explicitly improves recovery ability
-- End-to-end pipeline supports ONNX export for deployment
+- 单一策略统一覆盖走跑与跌倒恢复
+- AMP + 速度任务联合优化，兼顾风格与任务性能
+- 延迟重置与 recovery 采样机制，显式强化恢复能力
+- 训练到部署链路完整，支持 ONNX 导出
 
-## Acknowledgements
+## 致谢
 
-- Thanks to [unitreerobotics/unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab) for open-sourcing their work and inspiration.
-- Thanks to [Open-X-Humanoid/TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab); the rsl_rl AMP part in this project references their implementation.
+- 感谢 [unitreerobotics/unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab) 项目的开源工作与启发。
+- 感谢 [Open-X-Humanoid/TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab)，本项目在 rsl_rl 的 AMP 部分参考了该实现。

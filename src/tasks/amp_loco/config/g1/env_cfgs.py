@@ -21,17 +21,16 @@ def g1_amp_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg = make_amp_env_cfg()
 
   # Keep CCD high enough for stability but avoid Warp OOM from excessive EPA buffers.
-  cfg.sim.mujoco.ccd_iterations = 128
-  cfg.sim.contact_sensor_maxmatch = 128
-  cfg.sim.nconmax = 48
+  cfg.sim.mujoco.ccd_iterations = 500
+  cfg.sim.contact_sensor_maxmatch = 500
+  cfg.sim.nconmax = 48 #play的时候加wave和slope的时候改为100
 
   cfg.scene.entities = {"robot": get_g1_robot_cfg()}
 
-  # Set raycast sensor frame to G1 pelvis.
-  for sensor in cfg.scene.sensors or ():
-    if sensor.name == "terrain_scan":
-      assert isinstance(sensor, RayCastSensorCfg)
-      sensor.frame.name = "pelvis"
+  # Remove raycast sensor (no terrain scan needed).
+  cfg.scene.sensors = tuple(
+    s for s in (cfg.scene.sensors or ()) if s.name != "terrain_scan"
+  )
 
   site_names = ("left_foot", "right_foot")
   geom_names = tuple(
@@ -196,7 +195,7 @@ def g1_amp_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   if play:
     twist_cmd = cfg.commands["twist"]
     assert isinstance(twist_cmd, UniformVelocityCommandCfg)
-    twist_cmd.ranges.lin_vel_x = (-1.5, 3.0)
+    twist_cmd.ranges.lin_vel_x = (1.0, 3.0)
     twist_cmd.ranges.lin_vel_y = (-1.0, 1.0)
     twist_cmd.ranges.ang_vel_z = (-3.14 / 2, 3.14 / 2)
 
