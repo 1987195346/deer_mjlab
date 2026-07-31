@@ -1,0 +1,9 @@
+# Python bytecode/cache
+__pycache__/
+
+# Build and packaging artifacts
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
