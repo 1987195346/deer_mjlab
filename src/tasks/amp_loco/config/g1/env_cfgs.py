@@ -115,8 +115,12 @@ def g1_amp_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["track_anchor_angular_velocity"].params["anchor_cfg"].body_names = (anchor_name,)
     cfg.rewards["foot_slip"].params["asset_cfg"].site_names = site_names
     cfg.rewards["self_collisions"] = RewardTermCfg(
-        func=mdp.self_collision_cost, weight=-0.1,
-        params={"sensor_name": self_collision_cfg.name, "force_threshold": 10.0},
+        func=mdp.self_collision_cost,
+        weight=-0.1,
+        params={
+            "sensor_name": self_collision_cfg.name, 
+            "force_threshold": 10.0,
+        },
     )
     cfg.rewards["body_ang_vel_xy_l2"].params["body_cfg"].body_names = (root_name,)
 
@@ -143,7 +147,9 @@ def g1_amp_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("push_robot", None)
         cfg.curriculum = {}
         cfg.events["randomize_terrain"] = EventTermCfg(
-            func=envs_mdp.randomize_terrain, mode="reset", params={},
+            func=envs_mdp.randomize_terrain, 
+            mode="reset", 
+            params={},
         )
         cfg.events["init_motion_loader"].params["delay_reset_env_ratio"] = 1.0
 

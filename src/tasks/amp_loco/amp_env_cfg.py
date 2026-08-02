@@ -281,7 +281,11 @@ def make_amp_env_cfg() -> ManagerBasedRlEnvCfg:
         "track_root_height": RewardTermCfg(
             func=mdp.track_root_height,
             weight=1.0,
-            params={"std": 0.3, "mask_delay": True, "delay_env_rew_ratio": 3.5},
+            params={
+                "std": 0.3,
+                "mask_delay": True,
+                "delay_env_rew_ratio": 3.5,
+            },
         ),
         "body_ang_vel_xy_l2": RewardTermCfg(
             func=mdp.body_ang_vel_xy_l2,
