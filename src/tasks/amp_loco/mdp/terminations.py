@@ -8,7 +8,7 @@ from mjlab.managers.termination_manager import TerminationManager
 from mjlab.sensor import ContactSensor
 
 if TYPE_CHECKING:
-  from mjlab.envs import ManagerBasedRlEnv
+    from mjlab.envs import ManagerBasedRlEnv
 
 
 class DelayedTerminationManager(TerminationManager):

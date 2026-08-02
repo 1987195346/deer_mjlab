@@ -125,9 +125,9 @@ def analyze_motion(npz_file: Path, base_index: int, quat_format: str, preview: i
     if not (0 <= base_index < num_bodies):
         raise IndexError(f"base_index {base_index} out of range [0, {num_bodies - 1}]")
 
-    base_pos_w = body_pos_w[:, base_index, :]      # [T, 3]
-    base_quat_w = body_quat_w[:, base_index, :]    # [T, 4]
-    base_vel_w = body_lin_vel_w[:, base_index, :]  # [T, 3]
+    base_pos_w = body_pos_w[:, base_index, :]          # [T, 3]
+    base_quat_w = body_quat_w[:, base_index, :]        # [T, 4]
+    base_vel_w = body_lin_vel_w[:, base_index, :]      # [T, 3]
     base_ang_vel_w = body_ang_vel_w[:, base_index, :]  # [T, 3]
 
     if quat_format == "xyzw":

@@ -7,11 +7,11 @@ import torch
 from mjlab.entity import Entity
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 
-if TYPE_CHECKING:
-    from mjlab.envs import ManagerBasedRlEnv
-
 from src.tasks.amp_loco.ampmotion_loader import MotionLoader
 from src.tasks.amp_loco.mdp.terminations import DelayedTerminationManager
+
+if TYPE_CHECKING:
+    from mjlab.envs import ManagerBasedRlEnv
 
 _DEFAULT_ASSET_CFG = SceneEntityCfg("robot")
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import torch
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mujoco
+import torch
 
 from mjlab.actuator import Actuator, ActuatorCmd, BuiltinPositionActuatorCfg
 from mjlab.utils.spec import create_position_actuator

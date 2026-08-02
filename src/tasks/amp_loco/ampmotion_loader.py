@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 import math
-import numpy as np
 import os
-import torch
 from collections.abc import Sequence
 from dataclasses import MISSING
 from typing import TYPE_CHECKING
+
+import numpy as np
+import torch
 
 
 class MotionLoader:

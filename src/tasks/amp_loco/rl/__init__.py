@@ -1,3 +1,1 @@
-from .runner import (
-  AMPOnPolicyRunner as AMPOnPolicyRunner,
-)
+from .runner import AMPOnPolicyRunner as AMPOnPolicyRunner
