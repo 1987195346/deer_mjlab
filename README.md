@@ -40,6 +40,7 @@
 
 ```bash
 conda activate mjlab
+pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
 cd rsl_rl
 python -m pip install -e .
 cd AMP_mjlab
