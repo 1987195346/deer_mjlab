@@ -40,7 +40,10 @@
 
 ```bash
 conda activate mjlab
+conda install pytorch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 pytorch-cuda=12.1 -c pytorch -c nvidia
 cd AMP_mjlab
+python -m pip install -e .
+cd rsl_rl
 python -m pip install -e .
 ```
 
